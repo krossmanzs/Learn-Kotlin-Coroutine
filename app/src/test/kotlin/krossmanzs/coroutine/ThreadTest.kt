@@ -34,4 +34,26 @@ class ThreadTest {
         Thread.sleep(3_000)
         println("END FUNCTION")
     }
+
+    @Test
+    fun testMultipleThread() {
+        val thread1 = thread(start = false) {
+            println(Date())
+            Thread.sleep(2_000)
+            println("Finish Thread 1 : ${Thread.currentThread().name} : ${Date()}")
+        }
+
+        val thread2 = thread(start = false) {
+            println(Date())
+            Thread.sleep(2_000)
+            println("Finish Thread 2 : ${Thread.currentThread().name} : ${Date()}")
+        }
+
+        // keren aja gitu pake also :V
+        thread1.start().also { thread2.start() }
+
+        println("WAIT FOR thread TO FINISH")
+        Thread.sleep(3_000)
+        println("END FUNCTION")
+    }
 }
