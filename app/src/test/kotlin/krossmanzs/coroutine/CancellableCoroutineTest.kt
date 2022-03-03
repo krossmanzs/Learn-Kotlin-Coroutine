@@ -41,4 +41,21 @@ class CancellableCoroutineTest {
         }
     }
 
+    @Test
+    fun testCancellableFinally() {
+        runBlocking {
+            val job = GlobalScope.launch {
+                try {
+                    println("Start coroutine ${Date()}")
+                    delay(2_000)
+                    println("End coroutine ${Date()}")
+                } finally {
+                    println("Finish")
+                }
+            }
+
+            job.cancelAndJoin()
+        }
+    }
+
 }
