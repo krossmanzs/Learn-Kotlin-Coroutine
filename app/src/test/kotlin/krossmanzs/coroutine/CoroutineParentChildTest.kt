@@ -40,4 +40,44 @@ class CoroutineParentChildTest {
             job.join()
         }
     }
+
+    /**
+     * cancelChildren Function
+     *
+     * Coroutine akan direpresentasikan sebagai job(Deferred
+     * tuturan dari Job), dan di Job kita bisa mendapatkan semua
+     * childrean nya menggunakan field children
+     *
+     * Selain itu ada sebuah function bernama cancelChildren, function
+     * ini bisa kita gunakan untuk membatalkan semua coroutine children
+     *
+     * Jika kita membatalkan Job parent, kita tidak perlu membatalkan
+     * childrennya secara manual, karena saat Job di batalkan, semua child
+     * nya akan dibatalkan
+     *
+     * Note:
+     * Ini gatau kenapa kok child 2 nya malah ikutan padahal sudah di cancelChildren
+     */
+    @Test
+    fun testCancelChildren() {
+        runBlocking {
+            val job = GlobalScope.launch {
+                launch {
+                    delay(2_000)
+                    println("Child 1 Finish")
+                }
+
+                launch {
+                    delay(4_000)
+                    println("Child 2 Finish")
+                }
+
+                delay(1_000)
+                println("Parent Finish")
+            }
+
+            job.cancelChildren()
+            job.join()
+        }
+    }
 }
