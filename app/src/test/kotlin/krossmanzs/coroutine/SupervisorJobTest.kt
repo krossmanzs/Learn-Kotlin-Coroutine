@@ -65,4 +65,75 @@ class SupervisorJobTest {
             joinAll(job1, job2)
         }
     }
+
+    /**
+     * Exception Handler di Job dan Supervisor Job
+     *
+     * Exception handler di job ataupun di Supervisor Job secara default
+     * akan di propagate ke parentnya.
+     *
+     * Artinya jika kita membuat CoroutineExceptionHandler, kita harus
+     * membuatnya di parent, tidak bisa di coroutine childnya.
+     *
+     * Jika kita menambahkan exception handler di coroutine childnya. maka
+     * itu tidak akan pernah digunakan
+     */
+    @Test
+    fun testExceptionJob() {
+        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, throwable ->
+            println("Error happen ${throwable.message}")
+        }
+
+        val dispatcher = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
+        val scope = CoroutineScope(dispatcher)
+
+        val job = scope.launch {
+            launch(exceptionHandler) {// wrong, error will propagate to parent
+                println("Job child")
+                throw IllegalArgumentException("Job failed")
+            }
+        }
+
+        runBlocking {
+            job.join()
+        }
+    }
+
+    /**
+     * Exception Handler dengan supervisorScope
+     *
+     * Salah satu cara agar exception handler bisa dilakukan di coroutine
+     * child adalah dengan menggunakan supervisorScope.
+     *
+     * Saat menggunakan supervisorScope, maka exception bisa di gunakan di
+     * parent coroutine di supervisorScope, atau sebenarnya coroutine child di
+     * scope yang ada diatasnya.
+     *
+     * Jika terjadi error di childnya coroutine yang ada di supervisorScope, maka
+     * tetap akan di propagate ke parent coroutine di supervisorScope
+     */
+    @Test
+    fun testExceptionSupervisorJob() {
+        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, throwable ->
+            println("Error happen ${throwable.message}")
+        }
+
+        val dispatcher = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
+        val scope = CoroutineScope(dispatcher)
+
+        val job = scope.launch {
+            supervisorScope {
+                launch(exceptionHandler) {// exception handler harus berada di tepat setelah supervisor scope
+                    launch {
+                        println("child supervisor done")
+                        throw IllegalArgumentException("Child supervisor failed")
+                    }
+                }
+            }
+        }
+
+        runBlocking {
+            job.join()
+        }
+    }
 }
