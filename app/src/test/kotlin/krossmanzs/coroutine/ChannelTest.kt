@@ -1,6 +1,7 @@
 package krossmanzs.coroutine
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import org.junit.jupiter.api.Test
 
@@ -125,5 +126,45 @@ class ChannelTest {
         }
     }
 
+    /**
+     * Channel Buffer Overflow
+     *
+     * Ada kalahnya buffer sudah penuh, dan sender tetap
+     * mengirimkan data.
+     *
+     * Dalam kasus ini, kita bisa mengatur ketika terjadi buffer
+     * overflow(kelebihan data yang ditampung oleh buffer), kita
+     * bisa menggunakan enum BufferOverFlow:
+     *
+     * SUSPEND
+     * Block sender (nunggu sampai buffernya kosong)
+     *
+     * DROP_OLDEST
+     * Hapus data di buffer yang paling lama (paling depan)
+     *
+     * DROP_LATEST
+     * Hapus data di buffer yang paling baru (paling belakang)
+     */
+    @Test
+    fun testChannelOverflow() {
+        runBlocking {
+            val channel = Channel<Int>(capacity = 5, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+            val scope = CoroutineScope(Dispatchers.IO)
+            val job1 = scope.launch {
+                repeat(10) {
+                    channel.send(it)
+                }
+            }
+            job1.join()
+            delay(1_000)
+            val job2 = launch {
+                repeat(5) {
+                    println("Receive-$it = ${channel.receive()}")
+                }
+            }
+            job2.join()
+            channel.close()
+        }
+    }
 
 }
