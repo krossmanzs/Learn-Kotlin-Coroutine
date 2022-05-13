@@ -1,8 +1,7 @@
 package krossmanzs.coroutine
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 
@@ -42,6 +41,39 @@ class FlowTest {
             flow.collect() {
                 println("$it")
             }
+        }
+    }
+
+    /**
+     * Flow Operator
+     *
+     * Flow mirip dengan Kotlin Collection, memiliki
+     * banyak operator.
+     *
+     * Hampir semua operator yang ada di Kotlin Collection ada
+     * juga di Flow, seperti map, flatMap, filter, reduce, dll
+     *
+     * Yang membedakan dengan operator yang ada di Kotlin Collection
+     * adalah, operator di Flow mendukung suspend function.
+     */
+    suspend fun numberFlow() : Flow<Int> = flow {
+        repeat(100) {
+            emit(it)
+        }
+    }
+
+    suspend fun changeToString(number: Int): String {
+        delay(100)
+        return "Number $number"
+    }
+
+    @Test
+    fun testFlowOperator() {
+        runBlocking {
+            val flow1 = numberFlow()
+            flow1.filter { it % 2 == 0 }
+                .map { changeToString(it) }
+                .collect { println(it) }
         }
     }
 }
