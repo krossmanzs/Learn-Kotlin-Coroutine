@@ -2,6 +2,7 @@ package krossmanzs.coroutine
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BroadcastChannel
+import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.channels.broadcast
 import org.junit.jupiter.api.Test
 
@@ -71,6 +72,45 @@ class BroadcastChannelTest {
                 println()
                 repeat(10) { println("Receiver 2: ${receiver2.receive()}") }
             }.join()
+        }
+    }
+
+    /**
+     * Conflated Broadcast Channel
+     * adalah turunan dari Broadcast Channel, sehingga cara
+     * kerjanya sama
+     *
+     * walaupun receiver lambat, maka receiver tetap akan
+     * mendapatkan seluruh data dari sender.
+     *
+     * Namun berbeda dengan Conflated broadcast Channel, receiver
+     * hanya akan mendapat data paling baru dari sender
+     *
+     * Jadi jika receiver lambat, receiver hanya akan mendapat
+     * data paling baru saja, bukan semua data.
+     */
+    @Test
+    fun testConflatedBroadcastChannel() {
+        val broadcastChannel = ConflatedBroadcastChannel<Int>()
+        val receiver = broadcastChannel.openSubscription()
+        val scope = CoroutineScope(Dispatchers.IO)
+        runBlocking {
+            val job1 = scope.launch {
+                repeat(10) {
+                    delay(1_000)
+                    println("Send $it")
+                    broadcastChannel.send(it)
+                }
+            }
+            val job2 = scope.launch {
+                repeat(10) {
+                    delay(2_000)
+                    println("Receiver 2 : ${receiver.receive()}")
+                }
+            }
+
+            delay(12_000)
+            scope.cancel()
         }
     }
 }
