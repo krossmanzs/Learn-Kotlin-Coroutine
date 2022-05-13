@@ -3,6 +3,8 @@ package krossmanzs.coroutine
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
 import org.junit.jupiter.api.Test
 import java.util.concurrent.Executors
 
@@ -198,6 +200,35 @@ class ChannelTest {
                 channel.send(200)
             }
             job.join()
+        }
+    }
+
+    /**
+     * Produce Function
+     *
+     * Coroutine scope memiliki sebuah function bernama produce,
+     * ini digunakan untuk membuat sebuah coroutine yang digunakan
+     * untuk mengirim data ke channel, sederhananya kita bisa
+     * membuat channel secara mudah dengan menggunakan function produce
+     *
+     * Hasil return dari produce adalah ReceiveChannel (parent interface
+     * dari Channel), yang hanya bisa digunakan untuk mengambil data
+     */
+    @Test
+    fun testProduce() {
+        val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+        val scope = CoroutineScope(dispatcher)
+        runBlocking {
+            val channel: ReceiveChannel<Int> = scope.produce(capacity = 5) {
+                repeat(5) {
+                    send(it)
+                }
+            }
+            scope.launch{
+                repeat(5) {
+                    println("Receive-$it = ${channel.receive()}")
+                }
+            }.join()
         }
     }
 }
