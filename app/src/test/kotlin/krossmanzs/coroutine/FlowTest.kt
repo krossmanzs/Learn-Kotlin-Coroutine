@@ -1,8 +1,7 @@
 package krossmanzs.coroutine
 
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 
 class FlowTest {
@@ -105,6 +104,29 @@ class FlowTest {
                 .catch { println("Error ${it.message}") }
                 .onCompletion { println("Done || Finally") }
                 .collect()
+        }
+    }
+
+    /**
+     * Cancellable Flow
+     *
+     * Flow adalah coroutine, artinya dia bisa dibatalkan.
+     *
+     * Untuk membatalkan flow, kita bisa menggunakan function cancel()
+     * milik coroutine scope, function cancel() tersebut akan secara
+     * otomatis membatalkan job coroutine
+     */
+    @Test
+    fun testCancellableFlow() {
+        runBlocking {
+            val flow = numberFlow()
+            val scope = CoroutineScope(Dispatchers.IO)
+            scope.launch {
+                flow.onEach {
+                    if(it > 10) cancel()
+                    else println("Number $it in ${Thread.currentThread().name}")
+                }.collect()
+            }.join()
         }
     }
 }
