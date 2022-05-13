@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import org.junit.jupiter.api.Test
+import java.util.concurrent.Executors
 
 /**
  * Channel
@@ -167,4 +168,36 @@ class ChannelTest {
         }
     }
 
+    /**
+     * Channel Undelivered Element
+     *
+     * Jika ada kasus dimana sebuah channel sudah di close, tetapi ada
+     * coroutine yang masih mencoba mengirim data ke channel.
+     *
+     * Ketika kita mencoba mengirim data ke channel yang sudah di close,
+     * maka secara otomatis channel akan mengembalikan error ClosedSendChannelException
+     *
+     * Lalu bagaimana dengan data yang sudah dikirim?
+     * Kita bisa menambah lambda function ketika membuat channel, sebagai fallback
+     * ketika sebuah data dikirim dan channel sudah di close, maka fallback tersebut
+     * akan dieksekusi
+     *
+     * Function fallback tersebut bernama onUndeliveredElement
+     */
+    @Test
+    fun testUndeliveredElement() {
+        runBlocking {
+            val channel = Channel<Int>(capacity = 5) { value ->
+                println("Undelivered value $value")
+            }
+            val dispatcher = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
+            val scope = CoroutineScope(dispatcher)
+            channel.close()
+            val job = scope.launch {
+                channel.send(10)
+                channel.send(200)
+            }
+            job.join()
+        }
+    }
 }
